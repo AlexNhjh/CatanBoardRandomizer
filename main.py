@@ -50,6 +50,7 @@ def generateRandomBoard(board_type):
 
 def draw_board(board):
     fig, ax = plt.subplots(figsize=(15, 15))
+
     hex_radius = 1
     dx = 3/2 * hex_radius * 1.15
     dy = math.sqrt(3) * hex_radius * .85
@@ -77,11 +78,13 @@ def draw_board(board):
                                          facecolor=colors.get(tile, 'white'),
                                          edgecolor='black')
             ax.add_patch(hex)
-            ax.text(x, y, tile, ha='center', va='center', fontsize=10, weight='bold')
+            ax.text(x, y+.4, tile, ha='center', va='center', fontsize=10, weight='bold')
+            ax.text(x,y,str(random.randint(1,12)), ha='center', va='center', fontsize=10, weight='bold')
 
     ax.set_xlim(-1, max_row_len * dx + 1)
     ax.set_ylim(-len(board)*dy - 1, 2)
     ax.set_aspect('equal')
+
     plt.axis('off')
     plt.show()
 
