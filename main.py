@@ -182,10 +182,10 @@ board = add_water(generateRandomBoard('expansion'))
 print(board)
 def draw_board(board):
 
-    fig, ax = plt.subplots(figsize=(16,9))
+    fig, ax = plt.subplots(figsize=(11,11))
     fig.set_facecolor('#2C71D3')
 
-    hex_radius = 1
+    hex_radius = 1.12
     dx = 3/2 * hex_radius * 1.15
     dy = math.sqrt(3) * hex_radius * .85
 
@@ -221,16 +221,16 @@ def draw_board(board):
                                          facecolor=colors.get(tile[0], 'white'),
                                          edgecolor='black')
             ax.add_patch(hex)
-            ax.text(x, y+.4, tile[0].split(' ')[0], ha='center', va='center', fontsize=10, weight='bold')
+            ax.text(x, y+.55, tile[0].split(' ')[0], ha='center', va='center', fontsize=10, weight='bold')
 
             if tile[1] != '0':
                 ax.text(x,y, tile[1].split(' ')[0], ha='center', va='center', fontsize=10, weight='bold')
                 if tile[1] != '-1':
-                    num = patches.Circle((x, y), radius=hex_radius-.75,
+                    num = patches.Circle((x, y), radius=hex_radius-.8,
                                         facecolor='#B88747',
                                         edgecolor='black')
                 else:
-                    num = patches.Circle((x, y), radius=hex_radius - .75,
+                    num = patches.Circle((x, y), radius=hex_radius - .8,
                                          facecolor=colors[tile[0].split(' ')[0]],
                                          edgecolor='black')
                 ax.add_patch(num)
