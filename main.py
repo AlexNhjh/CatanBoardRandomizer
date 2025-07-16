@@ -89,7 +89,6 @@ def generateRandomBoard(board_type='base_game'):
     return board
 
 
-
 def add_water(board):
     harbors = {'sheep harbor':1,
                'wheat harbor':1,
@@ -103,8 +102,6 @@ def add_water(board):
         for i in range(v):
             harborList.append(k)
     random.shuffle(harborList)
-
-
 
     water_tiles = [-1] * (len(board) * 2 + 8 - len(harborList))
 
@@ -131,7 +128,7 @@ def add_water(board):
 
     for i in range(len(shuffled_water_tiles)):
         if 'harbor' in str(shuffled_water_tiles[i]):
-            shuffled_water_tiles[i] = [shuffled_water_tiles[i], '0']
+            shuffled_water_tiles[i] = [shuffled_water_tiles[i], '-1']
         else:
             shuffled_water_tiles[i] = ['water', '0']
 
@@ -141,10 +138,6 @@ def add_water(board):
     board.insert(0, [['water', '0']]*4)
     board.insert(len(board), [['water', '0']]*4)
 
-    for row in board:
-        print(row)
-    print(shuffled_water_tiles)
-
     direction = 'right'
     row, col = 0, 0
     i = 0
@@ -153,7 +146,6 @@ def add_water(board):
     while i < len(shuffled_water_tiles):
         board[row][col] = shuffled_water_tiles[i]
         i += 1
-        print(row, col)
 
         if direction == 'right':
             if col == len(board[row]) - 1:
@@ -188,10 +180,9 @@ def add_water(board):
 board = add_water(generateRandomBoard('expansion'))
 
 print(board)
-
 def draw_board(board):
 
-    fig, ax = plt.subplots(figsize=(19, 19))
+    fig, ax = plt.subplots(figsize=(16,9))
     fig.set_facecolor('#2C71D3')
 
     hex_radius = 1
@@ -205,13 +196,14 @@ def draw_board(board):
         'stone': 'gray',
         'brick': 'firebrick',
         'desert': 'navajowhite',
-        'water': 'blue',
-        'sheep harbor': '#4F68B0',
-        'wheat harbor': '#4F68B0',
-        'stone harbor': '#4F68B0',
-        'brick harbor': '#4F68B0',
-        'forest harbor': '#4F68B0',
-        'generic harbor': '#4F68B0'
+        'water': '#1F00FF',
+        'generic': '#e6e6e6',
+        'sheep harbor':   '#1A16E9',
+        'wheat harbor':   '#1A16E9',
+        'stone harbor':   '#1A16E9',
+        'brick harbor':   '#1A16E9',
+        'forest harbor':  '#1A16E9',
+        'generic harbor': '#1A16E9',
     }
 
     max_row_len = max(len(row) for row in board)
@@ -233,9 +225,14 @@ def draw_board(board):
 
             if tile[1] != '0':
                 ax.text(x,y, tile[1].split(' ')[0], ha='center', va='center', fontsize=10, weight='bold')
-                num = patches.Circle((x, y), radius=hex_radius-.75,
-                                      facecolor='#B88747',
-                                      edgecolor='black')
+                if tile[1] != '-1':
+                    num = patches.Circle((x, y), radius=hex_radius-.75,
+                                        facecolor='#B88747',
+                                        edgecolor='black')
+                else:
+                    num = patches.Circle((x, y), radius=hex_radius - .75,
+                                         facecolor=colors[tile[0].split(' ')[0]],
+                                         edgecolor='black')
                 ax.add_patch(num)
 
     ax.set_xlim(-1, max_row_len * dx + 1)
@@ -245,5 +242,5 @@ def draw_board(board):
     plt.axis('off')
     plt.show()
 
-draw_board(board)
 
+draw_board(add_water(generateRandomBoard('expansion')))
