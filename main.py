@@ -88,48 +88,106 @@ def generateRandomBoard(board_type='base_game'):
 
     return board
 
+
+
 def add_water(board):
-    harbors = {'sheep':1,
-               'wheat':1,
-               'stone':1,
-               'brick':1,
-               'wood':1,
-               'generic':4}
+    harbors = {'sheep harbor':1,
+               'wheat harbor':1,
+               'stone harbor':1,
+               'brick harbor':1,
+               'forest harbor':1,
+               'generic harbor':4}
+
     harborList = []
     for k, v in harbors.items():
         for i in range(v):
             harborList.append(k)
     random.shuffle(harborList)
 
-    harborList.insert(0, '-1')
 
-    water_tiles = [-1] * (len(board) * 2 + 8)
-    for i in range(len(water_tiles)):
-        if (i % 2) == 1:
-            water_tiles[i] = harborList.pop()
-    print(water_tiles)
+
+    water_tiles = [-1] * (len(board) * 2 + 8 - len(harborList))
+
+    combined = water_tiles + harborList
+
+
+    def shuffle_no_adjacent_numbers(items):
+        while True:
+            random.shuffle(items)
+            valid = True
+            for i in range(1, len(items)):
+                if items[i] != -1 and items[i - 1] != -1:
+                    valid = False
+                    break
+                if i == len(items) - 1:
+                    if items[0] != -1 and items[-1] != -1:
+                        valid = False
+                        break
+            if valid:
+                return items
+
+
+    shuffled_water_tiles = shuffle_no_adjacent_numbers(combined)
+
+    for i in range(len(shuffled_water_tiles)):
+        if 'harbor' in str(shuffled_water_tiles[i]):
+            shuffled_water_tiles[i] = [shuffled_water_tiles[i], '0']
+        else:
+            shuffled_water_tiles[i] = ['water', '0']
 
     for row in range(len(board)):
-        t = water_tiles.pop()
+        board[row].insert(0, ['water','0'])
+        board[row].insert(len(board[row]), ['water','0'])
+    board.insert(0, [['water', '0']]*4)
+    board.insert(len(board), [['water', '0']]*4)
 
-        board[row].insert(0, ['water',t])
-        board[row].insert(len(board[row]), ['water',t])
+    for row in board:
+        print(row)
+    print(shuffled_water_tiles)
 
-    temp = []
-    for i in range(len(board[0]) - 1):
-        temp.append(['water',water_tiles.pop()])
-    board.insert(0, temp)
-    board.insert(len(board), [['water', water_tiles.pop()]] * (len(board[len(board) - 1]) - 1))
+    direction = 'right'
+    row, col = 0, 0
+    i = 0
 
-    rowStart = random.randint(1, len(board) - 1)
+    # Traverse board circularly
+    while i < len(shuffled_water_tiles):
+        board[row][col] = shuffled_water_tiles[i]
+        i += 1
+        print(row, col)
 
-    while rowStart > 1:
-        print(rowStart)
-        rowStart -= 1
+        if direction == 'right':
+            if col == len(board[row]) - 1:
+                direction = 'down'
+                row += 1
+            col += 1
+
+        elif direction == 'left':
+            if col == 0:
+                direction = 'up'
+                row -= 1
+            else:
+                col -= 1
+
+
+        elif direction == 'down':
+            if len(board[row+1]) > len(board[row]):
+                col += 1
+            else:
+                col -= 1
+            row += 1
+            if row == len(board) - 1:
+                direction = 'left'
+
+
+        elif direction == 'up':
+            row -= 1
+
 
     return board
 
-board = add_water(generateRandomBoard('base_game'))
+board = add_water(generateRandomBoard('expansion'))
+
+print(board)
 
 def draw_board(board):
 
@@ -147,7 +205,13 @@ def draw_board(board):
         'stone': 'gray',
         'brick': 'firebrick',
         'desert': 'navajowhite',
-        'water': 'blue'
+        'water': 'blue',
+        'sheep harbor': '#4F68B0',
+        'wheat harbor': '#4F68B0',
+        'stone harbor': '#4F68B0',
+        'brick harbor': '#4F68B0',
+        'forest harbor': '#4F68B0',
+        'generic harbor': '#4F68B0'
     }
 
     max_row_len = max(len(row) for row in board)
@@ -165,9 +229,10 @@ def draw_board(board):
                                          facecolor=colors.get(tile[0], 'white'),
                                          edgecolor='black')
             ax.add_patch(hex)
-            ax.text(x, y+.4, tile[0], ha='center', va='center', fontsize=10, weight='bold')
+            ax.text(x, y+.4, tile[0].split(' ')[0], ha='center', va='center', fontsize=10, weight='bold')
+
             if tile[1] != '0':
-                ax.text(x,y, tile[1], ha='center', va='center', fontsize=10, weight='bold')
+                ax.text(x,y, tile[1].split(' ')[0], ha='center', va='center', fontsize=10, weight='bold')
                 num = patches.Circle((x, y), radius=hex_radius-.75,
                                       facecolor='#B88747',
                                       edgecolor='black')
