@@ -89,6 +89,9 @@ def generateRandomBoard(board_type='base_game'):
     return board
 
 
+board = generateRandomBoard('base_game')
+
+
 def add_water(board):
     harbors = {'sheep harbor':1,
                'wheat harbor':1,
@@ -142,10 +145,56 @@ def add_water(board):
     row, col = 0, 0
     i = 0
 
-    # Traverse board circularly
+    # Traverse board circularly and place harbor tiles
+    #                       ---->
+    #                     ^  xxx \
+    #                    |  xxxx  \
+    #                    |  xxxxx |
+    #                     \ xxxx  |
+    #                      \ xxx |
+    #                       -----
+
+    # Orientation is important to keep track of to place the harbors.
+    # Since the harbors can potentially border 3 vertices but can only port on 2,
+    # it is important to keep track of where they are at to correctly orient the harbors
+
+
+    orientation = "top left corner"
     while i < len(shuffled_water_tiles):
-        board[row][col] = shuffled_water_tiles[i]
+
+        rowlen = len(board[row]) - 1
+        match (row, col):
+            case (0,0):
+                orientation = "top left corner"
+            case (0,c) if c != 0 and c != rowlen:
+                orientation = 'top'
+            case (0, c) if c == rowlen:
+                orientation = "top right corner"
+            case (r, c) if r < len(board) // 2 and c == rowlen:
+                orientation = 'top right'
+            case (r, c) if r == len(board) // 2 and c == rowlen:
+                orientation = 'rightmost'
+            case (r, c) if r > len(board) // 2 and r != len(board) - 1 and c == rowlen:
+                orientation = 'bottom right'
+            case (r, c) if r == len(board) - 1 and c == rowlen:
+                orientation = 'bottom right corner'
+            case (r, c) if r == len(board) - 1 and c != 0 and c != rowlen:
+                orientation = 'bottom'
+            case(r, 0) if r == len(board) - 1:
+                orientation = 'bottom left corner'
+            case(r, 0) if r > len(board) // 2:
+                orientation = 'bottom left'
+            case(r, 0) if r == len(board) // 2:
+                orientation = 'leftmost'
+            case(r, 0) if r < len(board) // 2 and r != 0:
+                orientation = 'top left'
+
+
+
+        board[row][col] = shuffled_water_tiles[i] + [orientation]
         i += 1
+        print(row, col, orientation)
+
 
         if direction == 'right':
             if col == len(board[row]) - 1:
@@ -174,12 +223,10 @@ def add_water(board):
         elif direction == 'up':
             row -= 1
 
-
     return board
 
-board = add_water(generateRandomBoard('expansion'))
 
-print(board)
+
 def draw_board(board):
 
     fig, ax = plt.subplots(figsize=(11,11))
@@ -229,11 +276,13 @@ def draw_board(board):
                     num = patches.Circle((x, y), radius=hex_radius-.8,
                                         facecolor='#B88747',
                                         edgecolor='black')
-                else:
+                elif tile[1] == '-1':    # Harbor tile
                     num = patches.Circle((x, y), radius=hex_radius - .8,
                                          facecolor=colors[tile[0].split(' ')[0]],
                                          edgecolor='black')
+                    print(tile[0], tile[1], tile[2])
                 ax.add_patch(num)
+
 
     ax.set_xlim(-1, max_row_len * dx + 1)
     ax.set_ylim(-len(board)*dy - 1, 2)
@@ -242,5 +291,8 @@ def draw_board(board):
     plt.axis('off')
     plt.show()
 
+board = generateRandomBoard('base_game')
 
-draw_board(add_water(generateRandomBoard('expansion')))
+board = add_water(board)
+print(board)
+draw_board(board)
