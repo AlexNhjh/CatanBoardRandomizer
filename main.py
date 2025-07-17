@@ -2,17 +2,20 @@ import random
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 import math
+import tkinter as tk
+from tkinter import ttk
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 resource_tiles_base_game = {'sheep': 4,
                             'wheat': 4,
-                            'forest': 4,
+                            'wood': 4,
                             'stone': 3,
                             'brick': 3,
                             'desert': 1}
 
 resource_tiles_expansion = {'sheep': 6,
                             'wheat': 6,
-                            'forest': 6,
+                            'wood': 6,
                             'stone': 5,
                             'brick': 5,
                             'desert': 2}
@@ -36,6 +39,30 @@ number_tiles_expansion = {'2':2,
                          '10':3,
                          '11':3,
                          '12':2}
+
+harbors = {'sheep harbor': 1,
+           'wheat harbor': 1,
+           'stone harbor': 1,
+           'brick harbor': 1,
+           'wood harbor': 1,
+           'generic harbor': 4}
+
+colors = {
+    'sheep': 'lightgreen',
+    'wheat': 'khaki',
+    'wood': 'forestgreen',
+    'stone': 'gray',
+    'brick': 'firebrick',
+    'desert': 'navajowhite',
+    'water': '#1F00FF',
+    'generic': '#e6e6e6',
+    'sheep harbor': '#1A16E9',
+    'wheat harbor': '#1A16E9',
+    'stone harbor': '#1A16E9',
+    'brick harbor': '#1A16E9',
+    'wood harbor': '#1A16E9',
+    'generic harbor': '#1A16E9',
+}
 
 def generateRandomBoard(board_type='base_game'):
     if board_type == 'base_game':
@@ -79,6 +106,7 @@ def generateRandomBoard(board_type='base_game'):
             tiles_left -= 1
         if tiles_left < len(tiles) // 2:
             direction = 'shrinking'
+
         if direction == 'growing':
             row_size += 1
         else:
@@ -86,31 +114,16 @@ def generateRandomBoard(board_type='base_game'):
 
         board.append(temp)
 
-    return board
-
-
-board = generateRandomBoard('base_game')
-
-
-def add_water(board):
-    harbors = {'sheep harbor':1,
-               'wheat harbor':1,
-               'stone harbor':1,
-               'brick harbor':1,
-               'forest harbor':1,
-               'generic harbor':4}
-
     harborList = []
     for k, v in harbors.items():
         for i in range(v):
             harborList.append(k)
-    random.shuffle(harborList)
 
     water_tiles = [-1] * (len(board) * 2 + 8 - len(harborList))
 
     combined = water_tiles + harborList
 
-
+    # Ensure no harbor adjacency
     def shuffle_no_adjacent_numbers(items):
         while True:
             random.shuffle(items)
@@ -129,6 +142,8 @@ def add_water(board):
 
     shuffled_water_tiles = shuffle_no_adjacent_numbers(combined)
 
+    # change shuffled water tiles from a list to a list of lists w/
+    # [tile type, tile type identifier]
     for i in range(len(shuffled_water_tiles)):
         if 'harbor' in str(shuffled_water_tiles[i]):
             shuffled_water_tiles[i] = [shuffled_water_tiles[i], '-1']
@@ -154,11 +169,12 @@ def add_water(board):
     #                      \ xxx |
     #                       -----
 
+
     # Orientation is important to keep track of to place the harbors.
     # Since the harbors can potentially border 3 vertices but can only port on 2,
     # it is important to keep track of where they are at to correctly orient the harbors
-
-
+    #
+    #
     orientation = "top left corner"
     while i < len(shuffled_water_tiles):
 
@@ -223,36 +239,18 @@ def add_water(board):
         elif direction == 'up':
             row -= 1
 
-    return board
-
-
-
-
-def draw_board(board):
 
     fig, ax = plt.subplots(figsize=(11,11))
     fig.set_facecolor('#2C71D3')
+    ax.title.set_text(f'Randomized Catan Board\n {board_type.upper()}')
+    ax.title.set_fontsize(18)
+    ax.title.set_fontfamily('Times New Roman')
+    ax.title.set_position((.44,100))
+
 
     hex_radius = 1.12
     dx = 3/2 * hex_radius * 1.15
     dy = math.sqrt(3) * hex_radius * .85
-
-    colors = {
-        'sheep': 'lightgreen',
-        'wheat': 'khaki',
-        'forest': 'forestgreen',
-        'stone': 'gray',
-        'brick': 'firebrick',
-        'desert': 'navajowhite',
-        'water': '#1F00FF',
-        'generic': '#e6e6e6',
-        'sheep harbor':   '#1A16E9',
-        'wheat harbor':   '#1A16E9',
-        'stone harbor':   '#1A16E9',
-        'brick harbor':   '#1A16E9',
-        'forest harbor':  '#1A16E9',
-        'generic harbor': '#1A16E9',
-    }
 
     max_row_len = max(len(row) for row in board)
 
@@ -285,7 +283,7 @@ def draw_board(board):
 
                     corners = []
 
-                    # Function and for loop via ChatGPT
+                    # Function and for loop to plot tick marks on the hexagons via ChatGPT.
                     for i in range(6):
                         angle_deg = 60 * i - 30
                         angle_rad = math.radians(angle_deg)
@@ -302,6 +300,7 @@ def draw_board(board):
                         ex = corner_x - vx * length * 4
                         ey = corner_y - vy * length * 4
                         ax.plot([corner_x, ex], [corner_y, ey], color=colors[tile[0].split(' ')[0]], linewidth=5)
+
 
                     # Corner indeces of harbor tiles
                     #                     2
@@ -367,8 +366,4 @@ def draw_board(board):
     plt.axis('off')
     plt.show()
 
-board = generateRandomBoard('expansion')
-
-board = add_water(board)
-#print(board)
-draw_board(board)
+generateRandomBoard('base_game')
