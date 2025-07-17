@@ -193,7 +193,7 @@ def add_water(board):
 
         board[row][col] = shuffled_water_tiles[i] + [orientation]
         i += 1
-        print(row, col, orientation)
+        #print(row, col, orientation)
 
 
         if direction == 'right':
@@ -224,6 +224,7 @@ def add_water(board):
             row -= 1
 
     return board
+
 
 
 
@@ -271,16 +272,91 @@ def draw_board(board):
             ax.text(x, y+.55, tile[0].split(' ')[0], ha='center', va='center', fontsize=10, weight='bold')
 
             if tile[1] != '0':
-                ax.text(x,y, tile[1].split(' ')[0], ha='center', va='center', fontsize=10, weight='bold')
+
                 if tile[1] != '-1':
+                    ax.text(x, y, tile[1].split(' ')[0], ha='center', va='center', fontsize=10, weight='bold')
                     num = patches.Circle((x, y), radius=hex_radius-.8,
                                         facecolor='#B88747',
                                         edgecolor='black')
-                elif tile[1] == '-1':    # Harbor tile
+                elif tile[1] == '-1':  # Harbor tile
                     num = patches.Circle((x, y), radius=hex_radius - .8,
-                                         facecolor=colors[tile[0].split(' ')[0]],
-                                         edgecolor='black')
-                    print(tile[0], tile[1], tile[2])
+                                     facecolor=colors[tile[0].split(' ')[0]],
+                                     edgecolor='black')
+
+                    corners = []
+
+                    # Function and for loop via ChatGPT
+                    for i in range(6):
+                        angle_deg = 60 * i - 30
+                        angle_rad = math.radians(angle_deg)
+                        cx = x + hex_radius * math.cos(angle_rad)
+                        cy = y + hex_radius * math.sin(angle_rad)
+                        corners.append((cx, cy))
+
+                    def draw_tick(corner_x, corner_y, center_x, center_y, length=0.2):
+                        vx = corner_x - center_x
+                        vy = corner_y - center_y
+                        norm = math.sqrt(vx ** 2 + vy ** 2)
+                        vx /= norm
+                        vy /= norm
+                        ex = corner_x - vx * length * 4
+                        ey = corner_y - vy * length * 4
+                        ax.plot([corner_x, ex], [corner_y, ey], color=colors[tile[0].split(' ')[0]], linewidth=5)
+
+                    # Corner indeces of harbor tiles
+                    #                     2
+                    #                     *
+                    #           3     *   *   *      1
+                    #             *   *   *   *   *
+                    #             *   *   *   *   *
+                    #             *   *   *   *   *
+                    #           4     *   *   *      0
+                    #                     *
+                    #                     5
+                    #
+                    c1, c2 = 0, 0
+                    match tile[2]:
+                        case 'top left corner':
+                            c1 = 0
+                            c2 = 5
+                        case 'top':
+                            c1 = 5
+                            c2 = random.choice([0,4])
+                        case 'top right corner':
+                            c1 = 4
+                            c2 = 5
+                        case 'top right':
+                            c1 = 4
+                            c2 = random.choice([3,5])
+                        case 'rightmost':
+                            c1 = 4
+                            c2 = 3
+                        case 'bottom right':
+                            c1 = 3
+                            c2 = random.choice([2,4])
+                        case 'bottom right corner':
+                            c1 = 2
+                            c2 = 3
+                        case 'bottom':
+                            c1 = 2
+                            c2 = random.choice([3,1])
+                        case 'bottom left corner':
+                            c1 = 1
+                            c2 = random.choice([2,0])
+                        case 'bottom left':
+                            c1 = 1
+                            c2 = random.choice([2,0])
+                        case 'leftmost':
+                            c1 = 1
+                            c2 = 0
+                        case 'top left':
+                            c1 = 0
+                            c2 = random.choice([1,5])
+
+
+                    draw_tick(*corners[c1], x, y)
+                    draw_tick(*corners[c2], x, y)
+
                 ax.add_patch(num)
 
 
@@ -291,8 +367,8 @@ def draw_board(board):
     plt.axis('off')
     plt.show()
 
-board = generateRandomBoard('base_game')
+board = generateRandomBoard('expansion')
 
 board = add_water(board)
-print(board)
+#print(board)
 draw_board(board)
