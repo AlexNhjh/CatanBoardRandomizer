@@ -5,6 +5,7 @@ import math
 import tkinter as tk
 from tkinter import ttk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import customtkinter as ctk
 
 resource_tiles_base_game = {'sheep': 4,
                             'wheat': 4,
@@ -281,6 +282,10 @@ def generateRandomBoard(board_type='base_game'):
                                      facecolor=colors[tile[0].split(' ')[0]],
                                      edgecolor='black')
 
+                    if 'generic' in tile[0]:
+                        ax.text(x, y, "3:1", ha='center', va='center', fontsize=10, weight='bold')
+                    else:
+                        ax.text(x, y, "2:1", ha='center', va='center', fontsize=10, weight='bold')
                     corners = []
 
                     # Function and for loop to plot tick marks on the hexagons via ChatGPT.
@@ -364,6 +369,47 @@ def generateRandomBoard(board_type='base_game'):
     ax.set_aspect('equal')
 
     plt.axis('off')
-    plt.show()
+    return fig
 
-generateRandomBoard('base_game')
+
+
+
+
+
+# Setup customtkinter appearance
+ctk.set_appearance_mode("dark")
+ctk.set_default_color_theme("blue")
+
+canvas_widget = None  # global to manage redrawing
+
+# Create main window
+window = ctk.CTk()
+window.title("Matplotlib in CustomTkinter")
+window.geometry("800x800")
+window.configure(fg_color='#2C71D3')
+# Create a frame to contain the canvas (to avoid covering buttons)
+canvas_frame = ctk.CTkFrame(master=window, width=800, height=800, fg_color="transparent")
+canvas_frame.place(x=0, y=0)
+
+def show_plot(game_type):
+    global canvas_widget
+    fig = generateRandomBoard(game_type)
+
+    # Destroy old canvas if needed
+    if canvas_widget:
+        canvas_widget.get_tk_widget().destroy()
+
+    # Embed new canvas inside the frame
+    canvas_widget = FigureCanvasTkAgg(fig, master=canvas_frame)
+    canvas_widget.draw()
+    canvas_widget.get_tk_widget().place(x=0, y=0)
+
+# Buttons (placed *after* canvas, and directly on the root window)
+plot_base_game = ctk.CTkButton(window, text="Base Game", command=lambda: show_plot('base_game'), fg_color='black')
+plot_base_game.place(x=20, y=10)
+
+plot_expansion = ctk.CTkButton(window, text="Expansion", command=lambda: show_plot('expansion'), fg_color='black')
+plot_expansion.place(x=20, y=50)
+
+window.mainloop()
+
