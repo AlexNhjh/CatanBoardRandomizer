@@ -385,10 +385,10 @@ canvas_widget = None  # global to manage redrawing
 # Create main window
 window = ctk.CTk()
 window.title("Matplotlib in CustomTkinter")
-window.geometry("800x800")
+window.geometry("1000x1000")
 window.configure(fg_color='#2C71D3')
 # Create a frame to contain the canvas (to avoid covering buttons)
-canvas_frame = ctk.CTkFrame(master=window, width=800, height=800, fg_color="transparent")
+canvas_frame = ctk.CTkFrame(master=window, width=1000, height=1000, fg_color="transparent")
 canvas_frame.place(x=0, y=0)
 
 def show_plot(game_type):
