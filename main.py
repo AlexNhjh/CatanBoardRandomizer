@@ -65,7 +65,13 @@ colors = {
     'generic harbor': '#1A16E9',
 }
 
+
+
 def generateRandomBoard(board_type='base_game'):
+
+    global b_type
+    b_type = board_type
+
     if board_type == 'base_game':
         resource_tiles = resource_tiles_base_game
         number_tiles = number_tiles_base_game
@@ -86,6 +92,7 @@ def generateRandomBoard(board_type='base_game'):
             numbers.append(k)
     random.shuffle(numbers)
 
+    #print(f'{tiles}\n{len(tiles)}\n{numbers}\n{len(numbers)}')
 
     tiles_left = len(tiles)
     numbers_left = len(numbers)
@@ -99,12 +106,15 @@ def generateRandomBoard(board_type='base_game'):
 
             if tiles[tiles_left - 1] != 'desert':
                 num = numbers[numbers_left - 1]
+                numbers_left -= 1
             else:
                 num = '0'
 
             temp.append([tiles[tiles_left - 1], str(num)])
-            numbers_left -= 1
+
             tiles_left -= 1
+
+
         if tiles_left < len(tiles) // 2:
             direction = 'shrinking'
 
@@ -114,7 +124,12 @@ def generateRandomBoard(board_type='base_game'):
             row_size -= 1
 
         board.append(temp)
+    return board
 
+
+
+
+def add_water(board):
     harborList = []
     for k, v in harbors.items():
         for i in range(v):
@@ -207,7 +222,6 @@ def generateRandomBoard(board_type='base_game'):
                 orientation = 'top left'
 
 
-
         board[row][col] = shuffled_water_tiles[i] + [orientation]
         i += 1
         #print(row, col, orientation)
@@ -239,11 +253,13 @@ def generateRandomBoard(board_type='base_game'):
 
         elif direction == 'up':
             row -= 1
+    return board
 
+def plot_board(board):
 
     fig, ax = plt.subplots(figsize=(11,11))
     fig.set_facecolor('#2C71D3')
-    ax.title.set_text(f'Randomized Catan Board\n {board_type.upper()}')
+    ax.title.set_text(f'Randomized Catan Board\n {b_type.upper()}')
     ax.title.set_fontsize(18)
     ax.title.set_fontfamily('Times New Roman')
     ax.title.set_position((.44,100))
@@ -346,7 +362,7 @@ def generateRandomBoard(board_type='base_game'):
                             c2 = random.choice([3,1])
                         case 'bottom left corner':
                             c1 = 1
-                            c2 = random.choice([2,0])
+                            c2 = 2
                         case 'bottom left':
                             c1 = 1
                             c2 = random.choice([2,0])
@@ -391,9 +407,13 @@ window.configure(fg_color='#2C71D3')
 canvas_frame = ctk.CTkFrame(master=window, width=1000, height=1000, fg_color="transparent")
 canvas_frame.place(x=0, y=0)
 
-def show_plot(game_type):
+def show_plot(game_type, harbors):
     global canvas_widget
-    fig = generateRandomBoard(game_type)
+    if harbors:
+        fig = plot_board(add_water(generateRandomBoard(game_type)))
+    elif not harbors:
+        fig = plot_board(generateRandomBoard(game_type))
+
 
     # Destroy old canvas if needed
     if canvas_widget:
@@ -404,12 +424,24 @@ def show_plot(game_type):
     canvas_widget.draw()
     canvas_widget.get_tk_widget().place(x=0, y=0)
 
+
 # Buttons (placed *after* canvas, and directly on the root window)
-plot_base_game = ctk.CTkButton(window, text="Base Game", command=lambda: show_plot('base_game'), fg_color='black')
+
+plotHarbors = True
+
+plot_base_game = ctk.CTkButton(window, text="Base Game", command=lambda: show_plot('base_game', plotHarbors), fg_color='black')
 plot_base_game.place(x=20, y=10)
 
-plot_expansion = ctk.CTkButton(window, text="Expansion", command=lambda: show_plot('expansion'), fg_color='black')
+plot_expansion = ctk.CTkButton(window, text="Expansion", command=lambda: show_plot('expansion', plotHarbors), fg_color='black')
 plot_expansion.place(x=20, y=50)
+
+plot_harbors = ctk.CTkCheckBox(window, text="Randomize Harbors?", command=lambda: toggle_harbors(plotHarbors), fg_color='black')
+plot_harbors.place(x=20, y=90)
+
+def toggle_harbors(h):
+    global plotHarbors
+    plotHarbors = plot_harbors.get()
+
 
 window.mainloop()
 
