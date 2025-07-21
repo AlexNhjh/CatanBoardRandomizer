@@ -296,11 +296,37 @@ def plot_board(board):
 
             if 'harbor' not in tile[0]:
                 img = mpimg.imread(f'{current_tile}.png')
+                rotation_deg = 27
+
+            # Harbor Tile. Determine rotation of tile
             else:
-                img = mpimg.imread(f'water.png')
+                img = mpimg.imread(f'bridge.png')
+                match tile[2]:
+                    case 'top left corner':
+                        rotation_deg = 60
+                    case 'top':
+                        rotation_deg = random.choice([0, 60])
+                    case 'top right corner':
+                        rotation_deg = 0
+                    case 'top right':
+                        rotation_deg = random.choice([300, 0])
+                    case 'rightmost':
+                        rotation_deg = 300
+                    case 'bottom right':
+                        rotation_deg = random.choice([240, 300])
+                    case 'bottom right corner':
+                        rotation_deg = 240
+                    case 'bottom':
+                        rotation_deg = random.choice([180, 240])
+                    case 'bottom left corner':
+                        rotation_deg = 180
+                    case 'bottom left':
+                        rotation_deg = random.choice([120, 180])
+                    case 'leftmost':
+                        rotation_deg = 120
+                    case 'top left':
+                        rotation_deg = random.choice([60, 120])
 
-
-            rotation_deg = 27
 
             transform = transforms.Affine2D().rotate_deg_around(x, y, rotation_deg) + ax.transData
 
@@ -324,7 +350,7 @@ def plot_board(board):
             im.set_clip_path(hex)
 
             ax.add_patch(hex)
-            ax.text(x, y+.55, current_tile, ha='center', va='center', fontsize=10, weight='bold')
+
 
             if tile[1] != '0':
 
@@ -345,91 +371,30 @@ def plot_board(board):
                     num = patches.Circle((x, y), radius=hex_radius-.7,
                                         facecolor='#B88747',
                                         edgecolor='black')
+                    ax.add_patch(num)
                 elif tile[1] == '-1':  # Harbor tile
-                    num = patches.Circle((x, y), radius=hex_radius - .8,
-                                     facecolor=colors[tile[0].split(' ')[0]],
-                                     edgecolor='black')
+                    tile_type = tile[0].split(' ')[0]
 
-                    if 'generic' in tile[0]:
-                        ax.text(x, y, "3:1", ha='center', va='center', fontsize=10, weight='bold')
-                    else:
-                        ax.text(x, y, "2:1", ha='center', va='center', fontsize=10, weight='bold')
-                    corners = []
+                    tile_path = mpimg.imread(f"{tile_type}_material.png")
 
-                    # Function and for loop to plot tick marks on the hexagons via ChatGPT.
-                    for i in range(6):
-                        angle_deg = 60 * i - 30
-                        angle_rad = math.radians(angle_deg)
-                        cx = x + hex_radius * math.cos(angle_rad)
-                        cy = y + hex_radius * math.sin(angle_rad)
-                        corners.append((cx, cy))
+                    # Show image centered at (x, y)
+                    tile_image = ax.imshow(
+                        tile_path,
+                        extent=[x - hex_radius*.27, x + hex_radius*.27, y - hex_radius*.27, y + hex_radius*.27],
+                        zorder=0
+                    )
 
-                    def draw_tick(corner_x, corner_y, center_x, center_y, length=0.2):
-                        vx = corner_x - center_x
-                        vy = corner_y - center_y
-                        norm = math.sqrt(vx ** 2 + vy ** 2)
-                        vx /= norm
-                        vy /= norm
-                        ex = corner_x - vx * length * 4
-                        ey = corner_y - vy * length * 4
-                        ax.plot([corner_x, ex], [corner_y, ey], color=colors[tile[0].split(' ')[0]], linewidth=5)
+                    # Clip the image to a circle (in data coordinates)
+                    clip_circle = patches.Circle((x, y), radius=hex_radius - 0.8, transform=ax.transData)
+                    tile_image.set_clip_path(clip_circle)
 
+                    # Draw circle outline (optional)
+                    ax.add_patch(patches.Circle((x, y), radius=hex_radius - 0.8,
+                                                facecolor='none', edgecolor='black', linewidth=1.5))
 
-                    # Corner indeces of harbor tiles
-                    #                     2
-                    #                     *
-                    #           3     *   *   *      1
-                    #             *   *   *   *   *
-                    #             *   *   *   *   *
-                    #             *   *   *   *   *
-                    #           4     *   *   *      0
-                    #                     *
-                    #                     5
-                    #
-                    c1, c2 = 0, 0
-                    match tile[2]:
-                        case 'top left corner':
-                            c1 = 0
-                            c2 = 5
-                        case 'top':
-                            c1 = 5
-                            c2 = random.choice([0,4])
-                        case 'top right corner':
-                            c1 = 4
-                            c2 = 5
-                        case 'top right':
-                            c1 = 4
-                            c2 = random.choice([3,5])
-                        case 'rightmost':
-                            c1 = 4
-                            c2 = 3
-                        case 'bottom right':
-                            c1 = 3
-                            c2 = random.choice([2,4])
-                        case 'bottom right corner':
-                            c1 = 2
-                            c2 = 3
-                        case 'bottom':
-                            c1 = 2
-                            c2 = random.choice([3,1])
-                        case 'bottom left corner':
-                            c1 = 1
-                            c2 = 2
-                        case 'bottom left':
-                            c1 = 1
-                            c2 = random.choice([2,0])
-                        case 'leftmost':
-                            c1 = 1
-                            c2 = 0
-                        case 'top left':
-                            c1 = 0
-                            c2 = random.choice([1,5])
-
-
-                    draw_tick(*corners[c1], x, y)
-                    draw_tick(*corners[c2], x, y)
-
-                ax.add_patch(num)
+                    # Add harbor ratio text
+                    ratio_text = "3:1" if 'generic' in tile[0] else "2:1"
+                    ax.text(x, y, ratio_text, ha='center', va='center', fontsize=10, weight='bold')
 
 
     ax.set_xlim(-1, max_row_len * dx + 1)
