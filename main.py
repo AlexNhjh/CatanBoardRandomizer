@@ -6,6 +6,10 @@ import tkinter as tk
 from tkinter import ttk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import customtkinter as ctk
+import numpy as np
+import textwrap
+import matplotlib.image as mpimg
+import matplotlib.transforms as transforms
 
 resource_tiles_base_game = {'sheep': 4,
                             'wheat': 4,
@@ -65,7 +69,16 @@ colors = {
     'generic harbor': '#1A16E9',
 }
 
-
+probabilities_2_die =   {'2':1,
+                         '3':2,
+                         '4':3,
+                         '5':4,
+                         '6':5,
+                         '8':5,
+                         '9':4,
+                         '10':3,
+                         '11':2,
+                         '12':1}
 
 def generateRandomBoard(board_type='base_game'):
 
@@ -94,28 +107,27 @@ def generateRandomBoard(board_type='base_game'):
 
     #print(f'{tiles}\n{len(tiles)}\n{numbers}\n{len(numbers)}')
 
-    tiles_left = len(tiles)
-    numbers_left = len(numbers)
+    tiles_len = len(tiles)
+    numbers_len = len(numbers)
     row_size = 3
 
     direction = 'growing'
     board = []
-    while tiles_left > 0:
+    while len(tiles) > 0:
         temp = []
         for i in range(row_size):
 
-            if tiles[tiles_left - 1] != 'desert':
-                num = numbers[numbers_left - 1]
-                numbers_left -= 1
+            if tiles[-1] != 'desert':
+                num = numbers.pop()
+
             else:
                 num = '0'
 
-            temp.append([tiles[tiles_left - 1], str(num)])
-
-            tiles_left -= 1
+            temp.append([tiles.pop(), str(num)])
 
 
-        if tiles_left < len(tiles) // 2:
+
+        if tiles_len > len(tiles) * 2:
             direction = 'shrinking'
 
         if direction == 'growing':
@@ -124,8 +136,8 @@ def generateRandomBoard(board_type='base_game'):
             row_size -= 1
 
         board.append(temp)
-    return board
 
+    return board
 
 
 
@@ -255,6 +267,8 @@ def add_water(board):
             row -= 1
     return board
 
+
+
 def plot_board(board):
 
     fig, ax = plt.subplots(figsize=(11,11))
@@ -276,21 +290,59 @@ def plot_board(board):
         offset = (max_row_len - row_len) * dx / 2  # Center this row
 
         for c, tile in enumerate(row):
-
+            current_tile = tile[0].split(' ')[0]
             x = c * dx + offset
             y = -r * dy
-            hex = patches.RegularPolygon((x, y), numVertices=6, radius=hex_radius,
-                                         orientation=math.radians(0),
-                                         facecolor=colors.get(tile[0], 'white'),
-                                         edgecolor='black')
+
+            if 'harbor' not in tile[0]:
+                img = mpimg.imread(f'{current_tile}.png')
+            else:
+                img = mpimg.imread(f'water.png')
+
+
+            rotation_deg = 27
+
+            transform = transforms.Affine2D().rotate_deg_around(x, y, rotation_deg) + ax.transData
+
+            im = ax.imshow(
+                img,
+                extent=[x - hex_radius*1, x + hex_radius*1, y - hex_radius*1, y + hex_radius*1],
+                zorder=0,
+                transform=transform
+            )
+
+            hex = patches.RegularPolygon(
+                (x, y),
+                numVertices=6,
+                radius=hex_radius,
+                orientation=math.radians(0),
+                edgecolor='#d8b960',
+                linewidth=4,
+                facecolor='none',
+                transform=ax.transData
+            )
+            im.set_clip_path(hex)
+
             ax.add_patch(hex)
-            ax.text(x, y+.55, tile[0].split(' ')[0], ha='center', va='center', fontsize=10, weight='bold')
+            ax.text(x, y+.55, current_tile, ha='center', va='center', fontsize=10, weight='bold')
 
             if tile[1] != '0':
 
                 if tile[1] != '-1':
-                    ax.text(x, y, tile[1].split(' ')[0], ha='center', va='center', fontsize=10, weight='bold')
-                    num = patches.Circle((x, y), radius=hex_radius-.8,
+                    current_digit = tile[1].split(' ')[0]
+                    current_probability = int(probabilities_2_die[current_digit])
+                    # Adds digit to number tiles
+                    ax.text(x, y, current_digit, ha='center', va='center', fontsize=12, weight='bold')
+
+                    # Adds dots to number tiles
+                    ax.text(x, y-.1, "." * current_probability,
+                            ha='center', va='center',
+                            fontsize=15,
+                            weight='bold',
+                            color=('red' if current_probability == 5 else 'black'))
+
+
+                    num = patches.Circle((x, y), radius=hex_radius-.7,
                                         facecolor='#B88747',
                                         edgecolor='black')
                 elif tile[1] == '-1':  # Harbor tile
@@ -427,7 +479,7 @@ def show_plot(game_type, harbors):
 
 # Buttons (placed *after* canvas, and directly on the root window)
 
-plotHarbors = True
+plotHarbors = False
 
 plot_base_game = ctk.CTkButton(window, text="Base Game", command=lambda: show_plot('base_game', plotHarbors), fg_color='black')
 plot_base_game.place(x=20, y=10)
@@ -442,6 +494,4 @@ def toggle_harbors(h):
     global plotHarbors
     plotHarbors = plot_harbors.get()
 
-
 window.mainloop()
-
