@@ -2,14 +2,11 @@ import random
 import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 import math
-import tkinter as tk
-from tkinter import ttk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import customtkinter as ctk
-import numpy as np
-import textwrap
 import matplotlib.image as mpimg
 import matplotlib.transforms as transforms
+from CTkToolTip import *
 
 resource_tiles_base_game = {'sheep': 4,
                             'wheat': 4,
@@ -78,7 +75,8 @@ probabilities_2_die =   {'2':1,
                          '9':4,
                          '10':3,
                          '11':2,
-                         '12':1}
+                         '12':1,
+                         '0':0}
 
 def generateRandomBoard(board_type='base_game'):
 
@@ -108,22 +106,83 @@ def generateRandomBoard(board_type='base_game'):
     #print(f'{tiles}\n{len(tiles)}\n{numbers}\n{len(numbers)}')
 
     tiles_len = len(tiles)
-    numbers_len = len(numbers)
+
     row_size = 3
 
     direction = 'growing'
     board = []
+    cur_row = 0
+    
+    
+    def check_above_2_tiles(row, col):
+        if row == 0:
+            return '0','0'
+        if direction == 'growing':
+            try:
+                above_left_tile = board[row - 1][col - 1][1] if col != 0 else '0'
+            except:
+                above_left_tile = '0'
+
+            try:
+                above_right_tile = board[row - 1][col][1]
+            except:
+                above_right_tile = '0'
+
+        elif direction == 'shrinking':
+            try:
+                above_left_tile = board[row - 1][col][1]
+            except:
+                above_left_tile = '0'
+
+            try:
+                above_right_tile = board[row - 1][col + 1][1]
+            except:
+                above_right_tile = '0'
+        return above_left_tile, above_right_tile
+    
+    
     while len(tiles) > 0:
         temp = []
+
         for i in range(row_size):
 
-            if tiles[-1] != 'desert':
-                num = numbers.pop()
+            above_left_tile, above_right_tile = check_above_2_tiles(cur_row, i)
 
-            else:
+            above_left_tile_probability = probabilities_2_die[above_left_tile] if above_left_tile != '0' else 0
+            above_right_tile_probability = probabilities_2_die[above_right_tile] if above_right_tile != '0' else 0
+
+
+            tile = tiles.pop(random.randrange(len(tiles)))
+
+            if tile == 'desert':
                 num = '0'
+            else:
+                if balanced == True:
+                    num = numbers.pop(random.randrange(len(numbers)))
+                    attempts = 0
+                    max_attempts = 10  # Or any safe value that prevents infinite loop
 
-            temp.append([tiles.pop(), str(num)])
+                    # Avoid high-probability adjacent tiles
+                    while (
+                            (
+                                    probabilities_2_die[str(num)] in (1,4,5) and (
+                                    above_right_tile_probability == probabilities_2_die[str(num)] or
+                                    above_left_tile_probability == probabilities_2_die[str(num)] or
+                                    (len(temp) > 0 and probabilities_2_die[temp[-1][1]] == probabilities_2_die[str(num)])
+                            )
+                            ) and attempts < max_attempts
+                    ):
+                        numbers.append(num)
+                        random.shuffle(numbers)
+                        num = numbers.pop()
+                        attempts += 1
+
+                    if attempts >= 10:
+                        return(generateRandomBoard(b_type))
+                else:
+                    num = numbers.pop(random.randrange(len(numbers)))
+
+            temp.append([tile, str(num)])
 
 
 
@@ -136,8 +195,16 @@ def generateRandomBoard(board_type='base_game'):
             row_size -= 1
 
         board.append(temp)
-
+        cur_row += 1
+        print('tiles=',tiles, 'length of tiles', len(tiles), temp, 'row=',cur_row)
+    for row in board:
+        print(row)
     return board
+
+
+
+
+
 
 
 
@@ -424,6 +491,7 @@ window.configure(fg_color='#2C71D3')
 canvas_frame = ctk.CTkFrame(master=window, width=1000, height=1000, fg_color="transparent")
 canvas_frame.place(x=0, y=0)
 
+
 def show_plot(game_type, harbors):
     global canvas_widget
     if harbors:
@@ -445,6 +513,7 @@ def show_plot(game_type, harbors):
 # Buttons (placed *after* canvas, and directly on the root window)
 
 plotHarbors = False
+balanced = False
 
 plot_base_game = ctk.CTkButton(window, text="Base Game", command=lambda: show_plot('base_game', plotHarbors), fg_color='black')
 plot_base_game.place(x=20, y=10)
@@ -455,8 +524,17 @@ plot_expansion.place(x=20, y=50)
 plot_harbors = ctk.CTkCheckBox(window, text="Randomize Harbors?", command=lambda: toggle_harbors(plotHarbors), fg_color='black')
 plot_harbors.place(x=20, y=90)
 
+balance_board = ctk.CTkCheckBox(window, text="Balance Board?", command=lambda: toggle_balance(balanced), fg_color='black')
+balance_board.place(x=20, y=120)
+
+tooltip = CTkToolTip(balance_board, delay=0.0, message="No adjacent 6/8, 3,8, or 2,12 pairs")
+
+
 def toggle_harbors(h):
     global plotHarbors
     plotHarbors = plot_harbors.get()
 
+def toggle_balance(h):
+    global balanced
+    balanced = balance_board.get()
 window.mainloop()
