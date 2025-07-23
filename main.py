@@ -90,7 +90,6 @@ def generateRandomBoard(board_type='base_game'):
         resource_tiles = resource_tiles_expansion
         number_tiles = number_tiles_expansion
 
-
     tiles = []
     for k,v in resource_tiles.items():
         for i in range(v):
@@ -103,16 +102,12 @@ def generateRandomBoard(board_type='base_game'):
             numbers.append(k)
     random.shuffle(numbers)
 
-    #print(f'{tiles}\n{len(tiles)}\n{numbers}\n{len(numbers)}')
-
-    tiles_len = len(tiles)
-
+    original_tiles_length = len(tiles)
     row_size = 3
 
     direction = 'growing'
     board = []
     cur_row = 0
-    
     
     def check_above_2_tiles(row, col):
         if row == 0:
@@ -152,41 +147,35 @@ def generateRandomBoard(board_type='base_game'):
     
     while len(tiles) > 0:
         temp = []
-
         for i in range(row_size):
-            print(cur_row, i, check_above_2_tiles(cur_row, i))
             above_left_tile, above_right_tile, above_left_resource, above_right_resource = check_above_2_tiles(cur_row, i)
-
             above_left_tile_probability = probabilities_2_die[above_left_tile] if above_left_tile != '0' else 0
             above_right_tile_probability = probabilities_2_die[above_right_tile] if above_right_tile != '0' else 0
 
+            # If adjacent_tiles is set to true, recursively place tiles until we are sure that there are no
+            # resource adjacencies. Otherwise, just randomly pop from the resource stack
             if adjacent_tiles:
-
                 tile = tiles.pop(random.randrange(len(tiles)))
-                print('true', tile, above_right_resource, above_left_resource, temp)
                 attempts = 0
                 max_attempts = 10
-
                 while (
                     (tile == above_left_resource or
                     tile == above_right_resource or
                     len(temp) > 0 and temp[-1][0] == tile)
                     and attempts < max_attempts
                 ):
-
                     tiles.append(tile)
                     random.shuffle(tiles)
                     tile = tiles.pop()
                     attempts += 1
-
                 if attempts >= 10:
                     return (generateRandomBoard(b_type))
 
-
             else:
                 tile = tiles.pop(random.randrange(len(tiles)))
-            # adjacent_tiles == True:
 
+            # If tile is desert, probability is always set to 0. Otherwise, randomly pop from probability stack
+            # if balanced is set to true, recursively place tiles until we have a balanced board
             if tile == 'desert':
                 num = '0'
             else:
@@ -217,27 +206,18 @@ def generateRandomBoard(board_type='base_game'):
 
             temp.append([tile, str(num)])
 
-
-
-        if tiles_len > len(tiles) * 2:
+        # adjust whether the board is growing or shrinking based on if we have already placed more than half of our tiles
+        if original_tiles_length > len(tiles) * 2:
             direction = 'shrinking'
 
         if direction == 'growing':
             row_size += 1
         else:
             row_size -= 1
-
         board.append(temp)
         cur_row += 1
 
-
     return board
-
-
-
-
-
-
 
 
 def add_water(board):
@@ -266,29 +246,25 @@ def add_water(board):
             if valid:
                 return items
 
-
     shuffled_water_tiles = shuffle_no_adjacent_numbers(combined)
 
     # change shuffled water tiles from a list to a list of lists w/
-    # [tile type, tile type identifier]
+    # [tile type, tile type identifier]. identifier is a bool, harbor or not harbor
     for i in range(len(shuffled_water_tiles)):
         if 'harbor' in str(shuffled_water_tiles[i]):
             shuffled_water_tiles[i] = [shuffled_water_tiles[i], '-1']
         else:
             shuffled_water_tiles[i] = ['water', '0']
 
+    # Place insert water tiles circularly around the board
     for row in range(len(board)):
         board[row].insert(0, ['water','0'])
         board[row].insert(len(board[row]), ['water','0'])
     board.insert(0, [['water', '0']]*4)
     board.insert(len(board), [['water', '0']]*4)
 
-    direction = 'right'
-    row, col = 0, 0
-    i = 0
-
-    # Traverse board circularly and place harbor tiles
-    #                       ---->
+    # Traverse board circularly and place harbor tiles along with the orientation of the tile relative to the board
+    #                       0--->
     #                     ^  xxx \
     #                    |  xxxx  \
     #                    |  xxxxx |
@@ -296,15 +272,15 @@ def add_water(board):
     #                      \ xxx |
     #                       -----
 
-
     # Orientation is important to keep track of to place the harbors.
     # Since the harbors can potentially border 3 vertices but can only port on 2,
     # it is important to keep track of where they are at to correctly orient the harbors
-    #
-    #
+
+    direction = 'right'
+    row, col = 0, 0
+    i = 0
     orientation = "top left corner"
     while i < len(shuffled_water_tiles):
-
         rowlen = len(board[row]) - 1
         match (row, col):
             case (0,0):
@@ -332,26 +308,21 @@ def add_water(board):
             case(r, 0) if r < len(board) // 2 and r != 0:
                 orientation = 'top left'
 
-
         board[row][col] = shuffled_water_tiles[i] + [orientation]
         i += 1
-        #print(row, col, orientation)
 
-
+        # Update direction of travel to match the exterior rim of the board where we placed the water tiles
         if direction == 'right':
             if col == len(board[row]) - 1:
                 direction = 'down'
                 row += 1
             col += 1
-
         elif direction == 'left':
             if col == 0:
                 direction = 'up'
                 row -= 1
             else:
                 col -= 1
-
-
         elif direction == 'down':
             if len(board[row+1]) > len(board[row]):
                 col += 1
@@ -360,12 +331,9 @@ def add_water(board):
             row += 1
             if row == len(board) - 1:
                 direction = 'left'
-
-
         elif direction == 'up':
             row -= 1
     return board
-
 
 
 def plot_board(board):
@@ -376,7 +344,6 @@ def plot_board(board):
     ax.title.set_fontsize(18)
     ax.title.set_fontfamily('Times New Roman')
     ax.title.set_position((.44,100))
-
 
     hex_radius = 1.12
     dx = 3/2 * hex_radius * 1.15
@@ -426,15 +393,7 @@ def plot_board(board):
                     case 'top left':
                         rotation_deg = random.choice([60, 120])
 
-
             transform = transforms.Affine2D().rotate_deg_around(x, y, rotation_deg) + ax.transData
-
-            im = ax.imshow(
-                img,
-                extent=[x - hex_radius*1, x + hex_radius*1, y - hex_radius*1, y + hex_radius*1],
-                zorder=0,
-                transform=transform
-            )
 
             hex = patches.RegularPolygon(
                 (x, y),
@@ -446,34 +405,35 @@ def plot_board(board):
                 facecolor='none',
                 transform=ax.transData
             )
+            im = ax.imshow(
+                img,
+                extent=[x - hex_radius, x + hex_radius, y - hex_radius, y + hex_radius],
+                zorder=0,
+                transform=transform
+            )
             im.set_clip_path(hex)
-
             ax.add_patch(hex)
 
 
             if tile[1] != '0':
-
                 if tile[1] != '-1':
                     current_digit = tile[1].split(' ')[0]
                     current_probability = int(probabilities_2_die[current_digit])
-                    # Adds digit to number tiles
-                    ax.text(x, y, current_digit, ha='center', va='center', fontsize=12, weight='bold')
 
-                    # Adds dots to number tiles
+                    # Add digit and probability to a circle patch in the center of the hexagon
+                    ax.text(x, y, current_digit, ha='center', va='center', fontsize=12, weight='bold')
                     ax.text(x, y-.1, "." * current_probability,
                             ha='center', va='center',
                             fontsize=15,
                             weight='bold',
                             color=('red' if current_probability == 5 else 'black'))
-
-
                     num = patches.Circle((x, y), radius=hex_radius-.7,
                                         facecolor='#B88747',
                                         edgecolor='black')
                     ax.add_patch(num)
+
                 elif tile[1] == '-1':  # Harbor tile
                     tile_type = tile[0].split(' ')[0]
-
                     tile_path = mpimg.imread(f"{tile_type}_material.png")
 
                     # Show image centered at (x, y)
@@ -483,11 +443,9 @@ def plot_board(board):
                         zorder=0
                     )
 
-                    # Clip the image to a circle (in data coordinates)
+                    # Clip the image to a circle
                     clip_circle = patches.Circle((x, y), radius=hex_radius - 0.8, transform=ax.transData)
                     tile_image.set_clip_path(clip_circle)
-
-                    # Draw circle outline (optional)
                     ax.add_patch(patches.Circle((x, y), radius=hex_radius - 0.8,
                                                 facecolor='none', edgecolor='black', linewidth=1.5))
 
@@ -495,30 +453,25 @@ def plot_board(board):
                     ratio_text = "3:1" if 'generic' in tile[0] else "2:1"
                     ax.text(x, y, ratio_text, ha='center', va='center', fontsize=10, weight='bold')
 
-
     ax.set_xlim(-1, max_row_len * dx + 1)
     ax.set_ylim(-len(board)*dy - 1, 2)
     ax.set_aspect('equal')
-
     plt.axis('off')
     return fig
-
-
-
-
 
 
 # Setup customtkinter appearance
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
 
-canvas_widget = None  # global to manage redrawing
+canvas_widget = None  # No plot shown by default
 
 # Create main window
 window = ctk.CTk()
 window.title("Matplotlib in CustomTkinter")
 window.geometry("1000x1000")
 window.configure(fg_color='#2C71D3')
+
 # Create a frame to contain the canvas (to avoid covering buttons)
 canvas_frame = ctk.CTkFrame(master=window, width=1000, height=1000, fg_color="transparent")
 canvas_frame.place(x=0, y=0)
@@ -531,7 +484,6 @@ def show_plot(game_type, harbors):
     elif not harbors:
         fig = plot_board(generateRandomBoard(game_type))
 
-
     # Destroy old canvas if needed
     if canvas_widget:
         canvas_widget.get_tk_widget().destroy()
@@ -542,8 +494,7 @@ def show_plot(game_type, harbors):
     canvas_widget.get_tk_widget().place(x=0, y=0)
 
 
-# Buttons (placed *after* canvas, and directly on the root window)
-
+# Buttons (placed after canvas, and directly on the root window)
 plotHarbors = False
 balanced = False
 adjacent_tiles = False
@@ -560,12 +511,12 @@ plot_harbors.place(x=20, y=90)
 balance_board = ctk.CTkCheckBox(window, text="Balance Board?", command=lambda: toggle_balance(balanced), fg_color='black')
 balance_board.place(x=20, y=120)
 
-tooltip = CTkToolTip(balance_board, delay=0.0, message="No adjacent 6/8, 3,8, or 2,12 pairs")
+probability_tooltip = CTkToolTip(balance_board, delay=0.0, message="No adjacent 6/8, 3,8, or 2,12 probability pairs")
 
 toggle_adjacent_tiles_button = ctk.CTkCheckBox(window, text="Adjacent Resources?", command=lambda: toggle_adjacent_resources(adjacent_tiles), fg_color='black')
 toggle_adjacent_tiles_button.place(x=20, y=150)
 
-tooltip2 = CTkToolTip(toggle_adjacent_tiles_button, delay=0.0, message="No adjacent resource tiles of the same type")
+adjacency_tooltip = CTkToolTip(toggle_adjacent_tiles_button, delay=0.0, message="No adjacent resource tiles of the same type")
 
 def toggle_harbors(h):
     global plotHarbors
