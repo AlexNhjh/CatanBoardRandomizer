@@ -7,6 +7,15 @@ import customtkinter as ctk
 import matplotlib.image as mpimg
 import matplotlib.transforms as transforms
 from CTkToolTip import *
+import sys, os
+
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
 
 resource_tiles_base_game = {'sheep': 4,
                             'wheat': 4,
@@ -361,12 +370,12 @@ def plot_board(board):
             y = -r * dy
 
             if 'harbor' not in tile[0]:
-                img = mpimg.imread(f'{current_tile}.png')
+                img = mpimg.imread(resource_path(f'images/{current_tile}.png'))
                 rotation_deg = 27
 
             # Harbor Tile. Determine rotation of tile
             else:
-                img = mpimg.imread(f'bridge.png')
+                img = mpimg.imread(resource_path(f'images/bridge.png'))
                 match tile[2]:
                     case 'top left corner':
                         rotation_deg = 60
@@ -434,7 +443,7 @@ def plot_board(board):
 
                 elif tile[1] == '-1':  # Harbor tile
                     tile_type = tile[0].split(' ')[0]
-                    tile_path = mpimg.imread(f"{tile_type}_material.png")
+                    tile_path = mpimg.imread(resource_path(f"images/{tile_type}_material.png"))
 
                     # Show image centered at (x, y)
                     tile_image = ax.imshow(
@@ -511,7 +520,7 @@ plot_harbors.place(x=20, y=90)
 balance_board = ctk.CTkCheckBox(window, text="Balance Board?", command=lambda: toggle_balance(balanced), fg_color='black')
 balance_board.place(x=20, y=120)
 
-probability_tooltip = CTkToolTip(balance_board, delay=0.0, message="No adjacent 6/8, 3,8, or 2,12 probability pairs")
+probability_tooltip = CTkToolTip(balance_board, delay=0.0, message="No adjacent 6/8, 5/9, or 2,12 probability pairs")
 
 toggle_adjacent_tiles_button = ctk.CTkCheckBox(window, text="Adjacent Resources?", command=lambda: toggle_adjacent_resources(adjacent_tiles), fg_color='black')
 toggle_adjacent_tiles_button.place(x=20, y=150)
