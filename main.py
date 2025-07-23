@@ -116,43 +116,76 @@ def generateRandomBoard(board_type='base_game'):
     
     def check_above_2_tiles(row, col):
         if row == 0:
-            return '0','0'
+            return '0','0','water','water'
         if direction == 'growing':
             try:
                 above_left_tile = board[row - 1][col - 1][1] if col != 0 else '0'
+                above_left_resource = board[row - 1][col - 1][0] if col != 0 else 'water'
             except:
                 above_left_tile = '0'
+                above_left_resource = 'water'
 
             try:
                 above_right_tile = board[row - 1][col][1]
+                above_right_resource = board[row - 1][col][0]
             except:
                 above_right_tile = '0'
+                above_right_resource = 'water'
 
         elif direction == 'shrinking':
             try:
                 above_left_tile = board[row - 1][col][1]
+                above_left_resource = board[row - 1][col][0]
             except:
                 above_left_tile = '0'
+                above_left_resource = 'water'
 
             try:
                 above_right_tile = board[row - 1][col + 1][1]
+                above_right_resource = board[row - 1][col + 1][0]
             except:
                 above_right_tile = '0'
-        return above_left_tile, above_right_tile
+                above_right_resource = 'water'
+
+        return above_left_tile, above_right_tile, above_left_resource, above_right_resource
     
     
     while len(tiles) > 0:
         temp = []
 
         for i in range(row_size):
-
-            above_left_tile, above_right_tile = check_above_2_tiles(cur_row, i)
+            print(cur_row, i, check_above_2_tiles(cur_row, i))
+            above_left_tile, above_right_tile, above_left_resource, above_right_resource = check_above_2_tiles(cur_row, i)
 
             above_left_tile_probability = probabilities_2_die[above_left_tile] if above_left_tile != '0' else 0
             above_right_tile_probability = probabilities_2_die[above_right_tile] if above_right_tile != '0' else 0
 
+            if adjacent_tiles:
 
-            tile = tiles.pop(random.randrange(len(tiles)))
+                tile = tiles.pop(random.randrange(len(tiles)))
+                print('true', tile, above_right_resource, above_left_resource, temp)
+                attempts = 0
+                max_attempts = 10
+
+                while (
+                    (tile == above_left_resource or
+                    tile == above_right_resource or
+                    len(temp) > 0 and temp[-1][0] == tile)
+                    and attempts < max_attempts
+                ):
+
+                    tiles.append(tile)
+                    random.shuffle(tiles)
+                    tile = tiles.pop()
+                    attempts += 1
+
+                if attempts >= 10:
+                    return (generateRandomBoard(b_type))
+
+
+            else:
+                tile = tiles.pop(random.randrange(len(tiles)))
+            # adjacent_tiles == True:
 
             if tile == 'desert':
                 num = '0'
@@ -196,9 +229,8 @@ def generateRandomBoard(board_type='base_game'):
 
         board.append(temp)
         cur_row += 1
-        print('tiles=',tiles, 'length of tiles', len(tiles), temp, 'row=',cur_row)
-    for row in board:
-        print(row)
+
+
     return board
 
 
@@ -514,6 +546,7 @@ def show_plot(game_type, harbors):
 
 plotHarbors = False
 balanced = False
+adjacent_tiles = False
 
 plot_base_game = ctk.CTkButton(window, text="Base Game", command=lambda: show_plot('base_game', plotHarbors), fg_color='black')
 plot_base_game.place(x=20, y=10)
@@ -529,6 +562,10 @@ balance_board.place(x=20, y=120)
 
 tooltip = CTkToolTip(balance_board, delay=0.0, message="No adjacent 6/8, 3,8, or 2,12 pairs")
 
+toggle_adjacent_tiles_button = ctk.CTkCheckBox(window, text="Adjacent Resources?", command=lambda: toggle_adjacent_resources(adjacent_tiles), fg_color='black')
+toggle_adjacent_tiles_button.place(x=20, y=150)
+
+tooltip2 = CTkToolTip(toggle_adjacent_tiles_button, delay=0.0, message="No adjacent resource tiles of the same type")
 
 def toggle_harbors(h):
     global plotHarbors
@@ -537,4 +574,9 @@ def toggle_harbors(h):
 def toggle_balance(h):
     global balanced
     balanced = balance_board.get()
+
+def toggle_adjacent_resources(h):
+    global adjacent_tiles
+    adjacent_tiles = toggle_adjacent_tiles_button.get()
+
 window.mainloop()
